@@ -32,6 +32,7 @@ pid_t shell_pgid;
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_id(struct tokens *tokens);
+int cmd_execArgs(struct tokens *tokens);
 
 /* Built-in command functions take token array and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -47,6 +48,7 @@ fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_id, "id", "displays the user-id, the primary group-id and the groups the user is part of"},
+  {cmd_execArgs,"path", "executes the file"}
 };
 
 /* Prints a helpful description for the given command */
@@ -93,6 +95,31 @@ int cmd_id(unused struct tokens *tokens){
 
 	return 1;
 }
+
+/* For runnning executable files */
+int cmd_execArgs(struct tokens *tokens) 
+{ 
+    // Forking a child 
+    pid_t pid = fork();  
+  
+    if (pid == -1) 
+    { 
+        printf("\nFailed forking child.."); 
+        return 1; 
+    } 
+    else if (pid == 0) 
+    { 
+        if (execvp(*tokens.tokens[0],*tokens.tokens) < 0) 
+        { 
+            printf("\nCould not execute command.."); 
+        } 
+        exit(0); 
+    } else { 
+        // waiting for child to terminate 
+        wait(NULL);  
+        return 1; 
+    } 
+} 
 
 
 /* Looks up the built-in command, if it exists. */
@@ -148,9 +175,11 @@ int main(unused int argc, unused char *argv[]) {
 
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
-    } else {
+    } else 
+    {
+    	int status = cmd_execArgs(tokens);
       /* REPLACE this to run commands as programs. */
-      fprintf(stdout, "This shell doesn't know how to run programs.\n");
+      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
     }
 
     if (shell_is_interactive)
