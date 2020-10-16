@@ -9,6 +9,8 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <unistd.h>
+#include <grp.h>
+#include <pwd.h>
 
 #include "tokenizer.h"
 
@@ -29,6 +31,7 @@ pid_t shell_pgid;
 
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
+int cmd_id(struct tokens *tokens);
 
 /* Built-in command functions take token array and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -43,6 +46,7 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
+  {cmd_id, "id", "displays the user-id, the primary group-id and the groups the user is part of"},
 };
 
 /* Prints a helpful description for the given command */
@@ -56,6 +60,40 @@ int cmd_help(unused struct tokens *tokens) {
 int cmd_exit(unused struct tokens *tokens) {
   exit(0);
 }
+
+/* id command */
+int cmd_id(unused struct tokens *tokens){
+	printf("uid is %d\n", getuid());
+	printf("gid is %d\n", getgid());	
+
+	__uid_t uid = getuid();
+
+	struct passwd* pw = getpwuid(uid);
+	if(pw == NULL){
+    	perror("getpwuid error: ");
+	}
+	int ngroups = 0;
+
+	//this call is just to get the correct ngroups
+	getgrouplist(pw->pw_name, pw->pw_gid, NULL, &ngroups);
+	__gid_t groups[ngroups];
+
+	//here we actually get the groups
+	getgrouplist(pw->pw_name, pw->pw_gid, groups, &ngroups);
+
+	printf("Groups the user is part of -\n");
+	//example to print the groups name
+	for (int i = 0; i < ngroups; i++){
+	    struct group* gr = getgrgid(groups[i]);
+	    if(gr == NULL){
+	        perror("getgrgid error: ");
+	    }
+	    printf("%d, (%s)\n",gr->gr_gid,gr->gr_name);
+	}
+
+	return 1;
+}
+
 
 /* Looks up the built-in command, if it exists. */
 int lookup(char cmd[]) {
