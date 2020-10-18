@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <grp.h>
 #include <pwd.h>
+#include<fcntl.h> 
 
 #include "tokenizer.h"
 
@@ -32,7 +33,6 @@ pid_t shell_pgid;
 int cmd_exit(struct tokens *tokens);
 int cmd_help(struct tokens *tokens);
 int cmd_id(struct tokens *tokens);
-int cmd_execArgs(struct tokens *tokens);
 
 /* Built-in command functions take token array and return int */
 typedef int cmd_fun_t(struct tokens *tokens);
@@ -48,7 +48,6 @@ fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_exit, "exit", "exit the command shell"},
   {cmd_id, "id", "displays the user-id, the primary group-id and the groups the user is part of"},
-  {cmd_execArgs,"path", "executes the file"}
 };
 
 /* Prints a helpful description for the given command */
@@ -95,31 +94,6 @@ int cmd_id(unused struct tokens *tokens){
 
 	return 1;
 }
-
-/* For runnning executable files */
-int cmd_execArgs(struct tokens *tokens) 
-{ 
-    // Forking a child 
-    pid_t pid = fork();  
-  
-    if (pid == -1) 
-    { 
-        printf("\nFailed forking child.."); 
-        return 1; 
-    } 
-    else if (pid == 0) 
-    { 
-        if (execvp(*tokens.tokens[0],*tokens.tokens) < 0) 
-        { 
-            printf("\nCould not execute command.."); 
-        } 
-        exit(0); 
-    } else { 
-        // waiting for child to terminate 
-        wait(NULL);  
-        return 1; 
-    } 
-} 
 
 
 /* Looks up the built-in command, if it exists. */
@@ -175,16 +149,106 @@ int main(unused int argc, unused char *argv[]) {
 
     if (fundex >= 0) {
       cmd_table[fundex].fun(tokens);
-    } else 
+    } 
+    else 
     {
-    	int status = cmd_execArgs(tokens);
-      /* REPLACE this to run commands as programs. */
-      // fprintf(stdout, "This shell doesn't know how to run programs.\n");
-    }
+    	/* REPLACE this to run commands as programs. */
+    	// fprintf(stdout, "This shell doesn't know how to run programs.\n");
+
+		char *execFile = (char *)malloc(sizeof(char)*4096);
+		char *outFile = (char *)malloc(sizeof(char)*4096);
+		
+		// If > is present
+		bool redirection = false;
+		int output = 1;
+		
+		int i=0;
+		for(;i<4096;i++)
+		{
+			if(line[i]==10 || line[i]==' ' || line[i]=='>')
+			{
+		  		execFile[i] = '\0';
+		  		break;
+			}
+			execFile[i] = line[i];
+		}
+		for(;i<4096;i++)
+		{
+			// if user wants to redirect
+			if(line[i]=='>')
+			{
+		  		redirection=1;
+		  		i++;
+		  		break;
+			}
+		}
+		
+		if(redirection)
+		{
+			// stripping initial whitespaces
+			while(line[i]==' ')
+			{
+				i++;
+			}
+			int startOutputFileIndex = i;
+			for(;i<4096;i++)
+			{
+		  		if(line[i]==10 || line[i]==' ')
+		  		{
+		    		outFile[i-startOutputFileIndex]='\0';
+		    		break;
+		  		}
+		  		outFile[i-startOutputFileIndex]=line[i];
+			}
+		}
+		
+		if(redirection && strlen(outFile))
+		{
+			output = open(outFile,O_WRONLY | O_CREAT | O_TRUNC);
+		}
+		else if(redirection && !strlen(outFile))
+		{
+			fprintf(stdout, "Redirection file not defined\n");
+		}
+
+		int pid = fork();
+		char *args[] = {execFile, NULL};
+		if (pid == 0)
+		{
+			// child process must use default signal handlers
+			signal(SIGINT, SIG_DFL);
+
+			// to ensure that its process group is placed in the foreground.
+			tcsetpgrp(0, getpgrp());
+
+			// child process
+			int old_stdout = dup(1);
+			if(output!=1)
+			{ 
+				dup2(output, 1);
+			}
+			execv(args[0], args);
+			if(output!=1)
+			{
+				close(output);
+			}
+			dup2(old_stdout,1);
+			fprintf(stdout, "%s: Command not found. Use ? for help.\nNOTE To run a executable in same directory make sure you use './<executable>'\n", args[0]);
+			return 0;
+		}
+		else 
+		{
+			// parent will wait for the child process to complete
+			wait(NULL);
+		}
+			
+	}
 
     if (shell_is_interactive)
+    {
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
+  	}
 
     /* Clean up memory */
     tokens_destroy(tokens);
