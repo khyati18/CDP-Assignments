@@ -4,7 +4,7 @@
 #include <functional>
 #include <mutex>
 #include <condition_variable>
-
+using namespace std;
 class Transaction
 {
 	public:
@@ -12,7 +12,7 @@ class Transaction
 		int transaction_id;
 		int status;
 
-		queue <pair<operation, variable>> sequenec_of_operations;
+		queue <string> op_seq;
 
 		// status = 0 for abort
 		// status = 1 for commit
