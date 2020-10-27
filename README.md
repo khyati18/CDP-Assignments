@@ -7,5 +7,5 @@ make
 ./shell  
 
 ## Assignment 4 Lock-Manager
-To run - g++ -std=c++11 -pthread main.cpp
+To run - g++ -std=c++11 -pthread main.cpp <br>
 Check out this - https://en.cppreference.com/w/cpp/thread/lock
