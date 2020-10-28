@@ -2,10 +2,14 @@
 
 ## OS-Shell Skeleton
 
-cd os-shell-skeleton  
-make  
-./shell  
+`cd os-shell-skeleton`
+
+`make` 
+
+`./shell`
 
 ## Assignment 4 Lock-Manager
-To run - g++ -std=c++11 -pthread main.cpp <br>
-Check out this - https://en.cppreference.com/w/cpp/thread/lock
+
+`g++ main.cpp`
+
+`./a.out < "inputFile" > "outputFile"`

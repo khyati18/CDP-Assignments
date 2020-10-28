@@ -10,21 +10,12 @@
 class LockMgr
 {
 	public:
-
-		Lock lock_variable;
-		Condition_variable cv[100];
-
-		queue <Transaction> trans_queue;
-
-		LockMgr();
-		~LockMgr();
-
 	   
-	    RWLock() : _status(0), _waiting_readers(0), _waiting_writers(0) {}
-	    RWLock(const RWLock&) = delete;
-	    RWLock(RWLock&&) = delete;
-	    RWLock& operator = (const RWLock&) = delete;
-	    RWLock& operator = (RWLock&&) = delete;
+	    LockMgr() : _status(0), _waiting_readers(0), _waiting_writers(0) {}
+	    LockMgr(const LockMgr&) = delete;
+	    LockMgr(LockMgr&&) = delete;
+	    LockMgr& operator = (const LockMgr&) = delete;
+	    LockMgr& operator = (LockMgr&&) = delete;
 
 	    void acquire_Read_lock(int transId, int varName) 
 	    {
@@ -46,7 +37,7 @@ class LockMgr
 
 	    void upgrade_to_Write(int transId, int varName)
 		{
-
+			return;
 		}
 
 	    void release_lock(int transId, int varName) 

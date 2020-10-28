@@ -160,9 +160,26 @@ int main(unused int argc, unused char *argv[]) {
 		
 		// If > is present
 		bool redirection = false;
+		bool pipe = false;
 		int output = 1;
+
+		int i = 0;
+		for(;i<4096;i++)
+		{
+			if(line[i]=='|')
+			{
+		  		pipe = true;
+		  		break;
+			}
+		}
+
+		if(pipe)
+		{
+			fprintf(stdout, "pipes are not yet supported\n");
+		}
 		
-		int i=0;
+		// to read name of execution file
+		i = 0;
 		for(;i<4096;i++)
 		{
 			if(line[i]==10 || line[i]==' ' || line[i]=='>')
@@ -172,12 +189,12 @@ int main(unused int argc, unused char *argv[]) {
 			}
 			execFile[i] = line[i];
 		}
+		// if user wants to redirect
 		for(;i<4096;i++)
 		{
-			// if user wants to redirect
 			if(line[i]=='>')
 			{
-		  		redirection=1;
+		  		redirection = 1;
 		  		i++;
 		  		break;
 			}
