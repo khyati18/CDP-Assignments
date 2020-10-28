@@ -5,18 +5,10 @@
 #include <mutex>
 #include <condition_variable>
 #include "LockMgr.cpp"
-
+#include "transaction.hpp"
 using namespace std;
 
-class transaction
-{
-	public:
 
-		int id;
-		int status;		// status = 0 for abort & status = 1 for commit
-
-		queue <string> op_seq;		// sequence of operations queue
-};
 
 typedef struct state_variable
 {
@@ -93,25 +85,18 @@ int main()
 
 	takeinput();
 
-	for (int i = 0; i < total_transactions; ++i)
-	{
-		execute_Transaction(trans[i]);
-	}
-
 	/* For running transactions in diff. threads
-
-	vector< thread > threads;
+	*/
+	vector< thread > threads(total_transactions);
   	for (int i = 0; i < trans.size(); i++) 
   	{
-		//threads[i](execute_Transaction, trans[i]);
-    	threads.push_back(thread(execute_Transaction, trans[i]));
+		threads[i]=thread(execute_Transaction,trans[i]);
   	}
-	cout<<0<<endl;
   	for (auto &th : threads) 
   	{
     	th.join();
   	}
-  	*/
-	
+  	
+
 	return 0;
 }
