@@ -1,6 +1,14 @@
 Starting to execute transaction - 1
-Commiting transaction1
-Starting to execute transaction - 2
-Commiting transaction2
-Starting to execute transaction - 3
+R,X
+Acquring read lock on 2for transaction 1
+R,Y
+Acquring read lock on 3for transaction 1
+Starting to execute transaction - Starting to execute transaction - 3
+R,W
+Acquring read lock on 1for transaction 3
 Commiting transaction3
+2
+R,Z
+Acquring read lock on 4for transaction 2
+Commiting transaction2
+Commiting transaction1
