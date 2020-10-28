@@ -6,6 +6,8 @@
 #include <condition_variable>
 #include "LockMgr.cpp"
 #include "transaction.hpp"
+#include "struct_lock.hpp"
+#include <semaphore.h>
 using namespace std;
 
 
@@ -23,7 +25,7 @@ state_var;
 int total_transactions;
 state_var data;
 vector <transaction> trans;
-
+vector <struct_lock> locks(5);
 void takeinput()
 {
 	char var;
@@ -80,6 +82,8 @@ void execute_Transaction(transaction T)
 }
 
 
+
+
 int main()
 {
 
@@ -87,6 +91,7 @@ int main()
 
 	/* For running transactions in diff. threads
 	*/
+	
 	vector< thread > threads(total_transactions);
   	for (int i = 0; i < trans.size(); i++) 
   	{
@@ -96,7 +101,10 @@ int main()
   	{
     	th.join();
   	}
-  	
+  //	struct_lock1 p();
+	
+	 
+	  cout<<locks[0].state<<endl;
 
 	return 0;
 }
