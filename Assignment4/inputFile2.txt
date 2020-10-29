@@ -12,8 +12,8 @@ Z=Z+50
 W,z
 C
 3
-R,V
-R,W
-V=V+W
-W,V
+R,X
+R,Y
+Y=Y+X
+W,Y
 C

@@ -10,5 +10,6 @@ class transaction
 		int id;
 		int status;		// status = 0 for abort & status = 1 for commit
 
-		queue <string> op_seq;		// sequence of operations queue
+		queue <string> op_seq;		// sequence of operations queue4
+		vector <bool> ac_lock;
 };

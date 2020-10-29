@@ -12,46 +12,6 @@ using namespace std;
 
 // locks[0]:v, locks[1]:w, locks[2]:x, locks[3]:y, locks[4]:z 
 vector <struct_lock> locks(5);
-sem_t mutex_global;
-
-void acquire_Read_lock(int transId, int varName) 
-{
-
-	//sem_wait(&mutex_global);
-    cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";
-	sem_wait(&locks[varName].lock);
-    locks[varName].state = 0;
-	//sem_post(&mutex_global);
-}
-
-void acquire_Write_lock(int transId, int varName) 
-{
-     
-	//sem_wait(&mutex_global);
-    cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
-	sem_wait(&locks[varName].lock);
-    locks[varName].state = 1;
-	//sem_post(&mutex_global);
-}
-
-void upgrade_to_Write(int transId, int varName)
-{ 
-	//sem_wait(&mutex_global);
-    cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
-    locks[varName].state = 1;
-	//sem_post(&mutex_global);
-}
-
-void release_lock(int transId, int varName) 
-{
-	
-	//sem_wait(&mutex_global);
-    cout << "unlock [" << transId << " , " <<char('V' +varName) << "]\n";
-	sem_post(&locks[varName].lock);
-    locks[varName].state = 1;
-	//sem_post(&mutex_global);
-
-}
 
 typedef struct state_variable
 {
@@ -66,6 +26,65 @@ state_var;
 int total_transactions;
 state_var data;
 vector <transaction> trans;
+
+/////*********LockMgr******///////
+sem_t mutex_global;
+void acquire_Read_lock(int transId, int varName) 
+{
+	sem_wait(&locks[varName].lock);
+	sem_wait(&mutex_global);
+	trans[transId-1].ac_lock[varName]=true;
+    cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+    locks[varName].state = 0;
+	sem_post(&mutex_global);
+}
+
+void acquire_Write_lock(int transId, int varName) 
+{
+    sem_wait(&locks[varName].lock);
+	sem_wait(&mutex_global);
+	trans[transId-1].ac_lock[varName]=true;
+    cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
+    locks[varName].state = 1;
+	sem_post(&mutex_global);
+}
+
+void upgrade_to_Write(int transId, int varName)
+{ 
+	sem_wait(&mutex_global);
+    cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
+    locks[varName].state = 1;
+	sem_post(&mutex_global);
+}
+
+void release_lock(int transId, int varName) 
+{
+    cout << "unlock [" << transId << " , " <<char('V' +varName) << "]\n";
+	sem_post(&locks[varName].lock);
+    locks[varName].state = 0;
+}
+void release_all(int transId)
+{ 
+	sem_wait(&mutex_global);
+	for(int i=0;i<5;i++)
+	{
+		if(trans[transId-1].ac_lock[i])
+		{
+			release_lock(transId,i);
+			trans[transId-1].ac_lock[i]=false;
+		}	
+	}
+	sem_post(&mutex_global);
+}
+void evaluate(string op)
+{
+	sem_wait(&mutex_global);
+	cout<<"we do some operation on "<<op[0]<<"\n";
+	sem_post(&mutex_global);
+
+}
+
+///////****LockMgr End****/////////
 
 void takeinput()
 {
@@ -93,29 +112,26 @@ void takeinput()
 
 		if(s=="A")
 		{
+			trans[i].op_seq.push(s);
 			trans[i].status = 0;
 		}
 		else 
 		{
+			trans[i].op_seq.push(s);
 			trans[i].status = 1;
 		}	
+		trans[i].ac_lock.resize(5,false);
 	}
 }
 
 void execute_Transaction(transaction T)
 {
-	//cout << "Starting to execute transaction - " << T.id << "\n";
-	
-	// acquire_Read_lock(T, variable);
-	// Update state variable 
-	// release_lock(T, variable);
 	
 	while(!T.op_seq.empty())
 	{
-		sem_wait(&mutex_global);
 		auto op = T.op_seq.front();
 		T.op_seq.pop();
-		cout << op << endl;
+
 
 		if(op[0]=='R' )
 		{
@@ -127,47 +143,27 @@ void execute_Transaction(transaction T)
 		}
 		else if(op[0]=='C')
 		{
-			T.status = 1;
+			//cout << "Commiting transaction" << T.id << endl;
+			release_all(T.id);
 		}
 		else if(op[0]=='A')
 		{
-			T.status = 0;
+			//cout << "Aborting transaction" << T.id << endl;
+			release_all(T.id);
 		}
 		else
 		{
-			//sem_wait(&mutex_global);
-			cout<<"we do some operation on "<<op[0]<<"\n";
-			//sem_post(&mutex_global);
+			evaluate(op);
 		}
-		sem_post(&mutex_global);
-		
 	}
 	
-	if(T.status==1)
-	{
-		sem_wait(&mutex_global);
-		cout << "Commiting transaction" << T.id << endl;
-		sem_post(&mutex_global);
-	}
-	else
-	{
-		sem_wait(&mutex_global);
-		cout << "Aborting transaction" << T.id << endl;
-		sem_post(&mutex_global);
-	}
-	
-
 	return;
 }
-
-
 
 
 int main()
 {
 	sem_init(&mutex_global,0,1);
-	cout<<1<<endl;
-
 	takeinput();
 
 	/* For running transactions in diff. threads
