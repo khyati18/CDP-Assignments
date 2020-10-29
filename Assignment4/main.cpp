@@ -63,6 +63,7 @@ void release_lock(int transId, int varName)
 	sem_post(&locks[varName].lock);
     locks[varName].state = 0;
 }
+
 void release_all(int transId)
 { 
 	sem_wait(&mutex_global);
@@ -76,10 +77,33 @@ void release_all(int transId)
 	}
 	sem_post(&mutex_global);
 }
+
 void evaluate(string op)
 {
 	sem_wait(&mutex_global);
-	cout<<"we do some operation on "<<op[0]<<"\n";
+	cout << "Doing operation " << op << "\n";
+
+	unordered_map <char, int*> state_vars;
+
+	state_vars['V'] = &data.v;
+	state_vars['W'] = &data.w;
+	state_vars['X'] = &data.x;
+	state_vars['Y'] = &data.y;
+	state_vars['Z'] = &data.z;
+
+	if(op.length()==5)													// X=X+Y
+	{
+		*state_vars[op[0]] = *state_vars[op[2]] + *state_vars[op[4]];
+	}
+	else if(op.length()==6)												// X=X-50
+	{
+		*state_vars[op[0]] = *state_vars[op[2]] - 50;
+	}
+	else if(op.length()==7)												// X=X+100
+	{
+		*state_vars[op[0]] = *state_vars[op[2]] + 100;
+	}
+
 	sem_post(&mutex_global);
 
 }
@@ -96,6 +120,8 @@ void takeinput()
 	cin >> var >> data.x;
 	cin >> var >> data.y;
 	cin >> var >> data.z;
+
+	cout << "Intial Values : V=" << data.v << " W=" << data.w << " X=" << data.x << " Y=" << data.y << " Z=" << data.z << endl;
 	
 	trans.resize(total_transactions);
 	
@@ -143,12 +169,12 @@ void execute_Transaction(transaction T)
 		}
 		else if(op[0]=='C')
 		{
-			//cout << "Commiting transaction" << T.id << endl;
+			cout << "Commit transaction" << T.id << endl;
 			release_all(T.id);
 		}
 		else if(op[0]=='A')
 		{
-			//cout << "Aborting transaction" << T.id << endl;
+			cout << "Abort transaction" << T.id << endl;
 			release_all(T.id);
 		}
 		else
@@ -166,8 +192,7 @@ int main()
 	sem_init(&mutex_global,0,1);
 	takeinput();
 
-	/* For running transactions in diff. threads
-	*/
+	/* For running transactions in diff. threads */
 	
 	vector< thread > threads(total_transactions);
   	for (int i = 0; i < trans.size(); i++) 
@@ -178,6 +203,8 @@ int main()
   	{
     	th.join();
   	}
+
+  	cout << "Final Values : V=" << data.v << " W=" << data.w << " X=" << data.x << " Y=" << data.y << " Z=" << data.z << endl; 
 
 	return 0;
 }

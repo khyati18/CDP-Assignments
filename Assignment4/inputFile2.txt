@@ -8,12 +8,12 @@ W,X
 C
 2
 R,Z
-Z=Z+50
-W,z
+Z=Z-50
+W,Z
 C
 3
 R,X
 R,Y
-Y=Y+X
+Y=Y+100
 W,Y
 C
