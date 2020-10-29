@@ -78,18 +78,12 @@ void release_all(int transId)
 	sem_post(&mutex_global);
 }
 
+unordered_map <char, int*> state_vars;
+
 void evaluate(string op)
 {
 	sem_wait(&mutex_global);
 	cout << "Doing operation " << op << "\n";
-
-	unordered_map <char, int*> state_vars;
-
-	state_vars['V'] = &data.v;
-	state_vars['W'] = &data.w;
-	state_vars['X'] = &data.x;
-	state_vars['Y'] = &data.y;
-	state_vars['Z'] = &data.z;
 
 	if(op.length()==5)													// X=X+Y
 	{
@@ -103,7 +97,6 @@ void evaluate(string op)
 	{
 		*state_vars[op[0]] = *state_vars[op[2]] + 100;
 	}
-
 	sem_post(&mutex_global);
 
 }
@@ -122,6 +115,12 @@ void takeinput()
 	cin >> var >> data.z;
 
 	cout << "Intial Values : V=" << data.v << " W=" << data.w << " X=" << data.x << " Y=" << data.y << " Z=" << data.z << endl;
+
+	state_vars['V'] = &data.v;
+	state_vars['W'] = &data.w;
+	state_vars['X'] = &data.x;
+	state_vars['Y'] = &data.y;
+	state_vars['Z'] = &data.z;
 	
 	trans.resize(total_transactions);
 	
@@ -152,6 +151,13 @@ void takeinput()
 
 void execute_Transaction(transaction T)
 {
+	vector <pair<int,bool>> initial_values;
+
+	initial_values.push_back({data.v, false});
+	initial_values.push_back({data.w, false});
+	initial_values.push_back({data.x, false});
+	initial_values.push_back({data.y, false});
+	initial_values.push_back({data.z, false});
 	
 	while(!T.op_seq.empty())
 	{
@@ -159,23 +165,36 @@ void execute_Transaction(transaction T)
 		T.op_seq.pop();
 
 
-		if(op[0]=='R' )
+		if(op[0]=='R')
 		{
 			acquire_Read_lock(T.id, op[2]-'V');
 		}
 		else if(op[0]=='W')
 		{
 			upgrade_to_Write(T.id,op[2]-'V');
+			
+			// checking true because this variable was updated
+			initial_values[op[2]-'V'] = {initial_values[op[2]-'V'].first, true};
 		}
 		else if(op[0]=='C')
 		{
-			cout << "Commit transaction" << T.id << endl;
+			cout << "Commit transaction " << T.id << "\n";
 			release_all(T.id);
 		}
 		else if(op[0]=='A')
 		{
-			cout << "Abort transaction" << T.id << endl;
+			cout << "Abort transaction " << T.id << "\n";
 			release_all(T.id);
+
+			sem_wait(&mutex_global);
+			for (int i = 0; i < 5; ++i)
+			{
+				if(initial_values[i].second)
+				{
+					*state_vars['V'+i] = initial_values[i].first;
+				}
+			}
+			sem_post(&mutex_global);
 		}
 		else
 		{

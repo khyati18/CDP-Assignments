@@ -1,13 +1,13 @@
 Intial Values : V=100 W=100 X=100 Y=100 Z=100
 R-lock [1 , X]
 R-lock [1 , Y]
-Commit transaction1
+Commit transaction 1
 unlock [1 , X]
 unlock [1 , Y]
 R-lock [2 , Z]
-Commit transaction2
-R-lock [3 , W]
-Commit transaction3
+Commit transaction 2
 unlock [2 , Z]
+R-lock [3 , W]
+Commit transaction 3
 unlock [3 , W]
 Final Values : V=100 W=100 X=100 Y=100 Z=100
