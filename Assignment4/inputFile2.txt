@@ -1,12 +1,19 @@
 3
 V 100 W 100 X 100 Y 100 Z 100
 1
-R,X
+R,X 
 R,Y
+X=X+Y
+W,X
 C
 2
 R,Z
+Z=Z+50
+W,z
 C
 3
+R,V
 R,W
+V=V+W
+W,V
 C
