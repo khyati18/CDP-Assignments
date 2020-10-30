@@ -42,53 +42,45 @@ void release_lock(int transId, int varName)
 void acquire_Read_lock(int transId, int varName) 
 {
 	int wait_flag = sem_trywait(&locks[varName].lock);
-	if(wait_flag==0)
+	if(wait_flag!=0)
 	{
 		sem_wait(&mutex_global);
-		trans[transId-1].ac_lock[varName]=true;
-    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
-    	locks[varName].state = 0;
-		sem_post(&mutex_global);
-	}
-	else
-	{
 		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		sem_post(&mutex_global);
 		sem_wait(&locks[varName].lock);
+	}
+		
 		sem_wait(&mutex_global);
 		trans[transId-1].ac_lock[varName]=true;
     	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
     	locks[varName].state = 0;
 		sem_post(&mutex_global);
-	}
+	
 		
 }
 
 void acquire_Write_lock(int transId, int varName) 
 {
 	int wait_flag = sem_trywait(&locks[varName].lock);
-	if(wait_flag==0)
+	if(wait_flag!=0)
 	{
 		sem_wait(&mutex_global);
-		trans[transId-1].ac_lock[varName]=true;
-    	cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
-    	locks[varName].state = 1;
-		sem_post(&mutex_global);
-	}
-	else
-	{
 		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		sem_post(&mutex_global);
 		sem_wait(&locks[varName].lock);
+	}
+		
 		sem_wait(&mutex_global);
 		trans[transId-1].ac_lock[varName]=true;
-    	cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
-    	locks[varName].state = 1;
+    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+    	locks[varName].state = 0;
 		sem_post(&mutex_global);
-	}
 }
 
 void upgrade_to_Write(int transId, int varName)
 { 
 	sem_wait(&mutex_global);
+	if(!locks[varName].state)
     cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
     locks[varName].state = 1;
 	sem_post(&mutex_global);
@@ -204,7 +196,7 @@ void execute_Transaction(transaction T)
 		{
 			acquire_Read_lock(T.id, op[2]-'V');
 		}
-		else if(op[0]=='W')
+		else if(op[0]=='W' && op.length()==3)
 		{
 			upgrade_to_Write(T.id,op[2]-'V');
 			
