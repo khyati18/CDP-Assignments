@@ -10,6 +10,10 @@ C
 R,Z
 Z=Z-50
 W,Z
+R,W
+R,V
+W=W+V
+W,W
 A
 3
 R,X

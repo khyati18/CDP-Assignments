@@ -64,7 +64,7 @@ void release_lock(int transId, int varName)
     locks[varName].state = 0;
 }
 
-void release_all(int transId)
+void release_all(int transId,int f)
 { 
 	sem_wait(&mutex_global);
 	for(int i=0;i<5;i++)
@@ -75,6 +75,10 @@ void release_all(int transId)
 			trans[transId-1].ac_lock[i]=false;
 		}	
 	}
+	if(f)
+	cout << "Commit transaction " << transId << "\n";
+	else 
+	cout << "Abort transaction " << transId << "\n";
 	sem_post(&mutex_global);
 }
 
@@ -100,6 +104,7 @@ void evaluate(string op)
 	sem_post(&mutex_global);
 
 }
+
 
 ///////****LockMgr End****/////////
 
@@ -173,20 +178,16 @@ void execute_Transaction(transaction T)
 		{
 			upgrade_to_Write(T.id,op[2]-'V');
 			
-			// checking true because this variable was updated
+			// set true because this variable was updated
 			initial_values[op[2]-'V'] = {initial_values[op[2]-'V'].first, true};
 		}
 		else if(op[0]=='C')
 		{
-			cout << "Commit transaction " << T.id << "\n";
-			release_all(T.id);
+			
+			release_all(T.id,1);
 		}
 		else if(op[0]=='A')
 		{
-			cout << "Abort transaction " << T.id << "\n";
-			release_all(T.id);
-
-			sem_wait(&mutex_global);
 			for (int i = 0; i < 5; ++i)
 			{
 				if(initial_values[i].second)
@@ -194,7 +195,7 @@ void execute_Transaction(transaction T)
 					*state_vars['V'+i] = initial_values[i].first;
 				}
 			}
-			sem_post(&mutex_global);
+			release_all(T.id,0);
 		}
 		else
 		{
