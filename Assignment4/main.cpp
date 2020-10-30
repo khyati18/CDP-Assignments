@@ -41,42 +41,49 @@ void release_lock(int transId, int varName)
 
 void acquire_Read_lock(int transId, int varName) 
 {
-	int flag = 1;
-	if(sem_trywait(&locks[varName].lock))
+	int wait_flag = sem_trywait(&locks[varName].lock);
+	if(wait_flag==0)
 	{
-		flag = 0;
+		sem_wait(&mutex_global);
+		trans[transId-1].ac_lock[varName]=true;
+    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+    	locks[varName].state = 0;
+		sem_post(&mutex_global);
 	}
-	release_lock(transId, varName);
-	if(flag)
+	else
 	{
 		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		sem_wait(&locks[varName].lock);
+		sem_wait(&mutex_global);
+		trans[transId-1].ac_lock[varName]=true;
+    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+    	locks[varName].state = 0;
+		sem_post(&mutex_global);
 	}
-	sem_wait(&locks[varName].lock);
-	sem_wait(&mutex_global);
-	trans[transId-1].ac_lock[varName]=true;
-    cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
-    locks[varName].state = 0;
-	sem_post(&mutex_global);
+		
 }
 
 void acquire_Write_lock(int transId, int varName) 
 {
-	int flag = 1;
-	if(sem_trywait(&locks[varName].lock))
+	int wait_flag = sem_trywait(&locks[varName].lock);
+	if(wait_flag==0)
 	{
-		flag = 0;
+		sem_wait(&mutex_global);
+		trans[transId-1].ac_lock[varName]=true;
+    	cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
+    	locks[varName].state = 1;
+		sem_post(&mutex_global);
 	}
-	release_lock(transId, varName);
-	if(flag)
+	else
 	{
 		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		sem_wait(&locks[varName].lock);
+		sem_wait(&mutex_global);
+		trans[transId-1].ac_lock[varName]=true;
+    	cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
+    	locks[varName].state = 1;
+		sem_post(&mutex_global);
 	}
-    sem_wait(&locks[varName].lock);
-	sem_wait(&mutex_global);
-	trans[transId-1].ac_lock[varName]=true;
-    cout << "W-lock [" << transId << " , " <<char( 'V' +varName) << "]\n";
-    locks[varName].state = 1;
-	sem_post(&mutex_global);
 }
 
 void upgrade_to_Write(int transId, int varName)
