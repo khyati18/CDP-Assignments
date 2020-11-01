@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include "transaction.hpp"
 #include "struct_lock.hpp"
+#include "Lock_Mgr.cpp"
 #include <semaphore.h>
 using namespace std;
 
@@ -30,7 +31,10 @@ vector <transaction> trans;
 // Global lock for isolating trasactions
 sem_t mutex_global;
 
-/////*********LockMgr******///////
+// For updating state variable
+unordered_map <char, int*> state_vars;
+
+//////////////////////////Lock Manager//////////////////////////////////
 
 void release_lock(int transId, int varName) 
 {
@@ -50,13 +54,11 @@ void acquire_Read_lock(int transId, int varName)
 		sem_wait(&locks[varName].lock);
 	}
 		
-		sem_wait(&mutex_global);
-		trans[transId-1].ac_lock[varName]=true;
-    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
-    	locks[varName].state = 0;
-		sem_post(&mutex_global);
-	
-		
+	sem_wait(&mutex_global);
+	trans[transId-1].ac_lock[varName]=true;
+	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+	locks[varName].state = 0;
+	sem_post(&mutex_global);
 }
 
 void acquire_Write_lock(int transId, int varName) 
@@ -70,18 +72,20 @@ void acquire_Write_lock(int transId, int varName)
 		sem_wait(&locks[varName].lock);
 	}
 		
-		sem_wait(&mutex_global);
-		trans[transId-1].ac_lock[varName]=true;
-    	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
-    	locks[varName].state = 0;
-		sem_post(&mutex_global);
+	sem_wait(&mutex_global);
+	trans[transId-1].ac_lock[varName]=true;
+	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+	locks[varName].state = 0;
+	sem_post(&mutex_global);
 }
 
 void upgrade_to_Write(int transId, int varName)
 { 
 	sem_wait(&mutex_global);
 	if(!locks[varName].state)
-    cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
+	{
+    	cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
+	}
     locks[varName].state = 1;
 	sem_post(&mutex_global);
 }
@@ -98,13 +102,15 @@ void release_all(int transId,int f)
 		}	
 	}
 	if(f)
-	cout << "Commit transaction " << transId << "\n";
+	{
+		cout << "Commit transaction " << transId << "\n";
+	}
 	else 
-	cout << "Abort transaction " << transId << "\n";
+	{
+		cout << "Abort transaction " << transId << "\n";
+	}
 	sem_post(&mutex_global);
 }
-
-unordered_map <char, int*> state_vars;
 
 void evaluate(string op)
 {
@@ -124,11 +130,9 @@ void evaluate(string op)
 		*state_vars[op[0]] = *state_vars[op[2]] + 100;
 	}
 	sem_post(&mutex_global);
-
 }
 
-
-///////****LockMgr End****/////////
+//////////////////////////Lock Manager//////////////////////////////////
 
 void takeinput()
 {
@@ -224,10 +228,8 @@ void execute_Transaction(transaction T)
 			evaluate(op);
 		}
 	}
-	
 	return;
 }
-
 
 int main()
 {
