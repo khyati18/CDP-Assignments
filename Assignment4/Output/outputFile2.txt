@@ -1,0 +1,43 @@
+Intial Values : V=100 W=100 X=100 Y=100 Z=100
+R-lock [1 , X]
+R-lock [1 , Y]
+Doing operation X=X+Y
+upgrade [1 , X]
+unlock [1 , X]
+unlock [1 , Y]
+Commit transaction 1
+R-lock [3 , Y]
+Doing operation Y=Y+100
+R-lock [3 , W]
+upgrade [3 , Y]
+unlock [3 , W]
+unlock [3 , Y]
+Commit transaction 3
+R-lock [2 , Z]
+Doing operation Z=Z-50
+upgrade [2 , Z]
+unlock [2 , Z]
+Commit transaction 2
+R-lock [4 , X]
+R-lock [4 , Y]
+Doing operation X=X+Y
+R-lock [4 , Z]
+Doing operation Z=Z+X
+upgrade [4 , Z]
+unlock [4 , X]
+unlock [4 , Y]
+unlock [4 , Z]
+Commit transaction 4
+R-lock [6 , V]
+R-lock [6 , Y]
+Doing operation V=V+100
+upgrade [6 , V]
+unlock [6 , V]
+unlock [6 , Y]
+Commit transaction 6
+R-lock [5 , Z]
+Doing operation Z=Z-50
+upgrade [5 , Z]
+unlock [5 , Z]
+Commit transaction 5
+Final Values : V=200 W=100 X=400 Y=200 Z=400

@@ -7,7 +7,6 @@
 #include <condition_variable>
 #include "transaction.hpp"
 #include "struct_lock.hpp"
-#include "Lock_Mgr.cpp"
 #include <semaphore.h>
 using namespace std;
 

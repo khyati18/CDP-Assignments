@@ -1,0 +1,30 @@
+Intial Values : V=100 W=100 X=100 Y=100 Z=100
+R-lock [1 , X]
+R-lock [1 , Y]
+unlock [1 , X]
+unlock [1 , Y]
+Commit transaction 1
+R-lock [2 , Z]
+unlock [2 , Z]
+Commit transaction 2
+R-lock [3 , W]
+unlock [3 , W]
+Commit transaction 3
+R-lock [4 , W]
+R-lock [4 , X]
+R-lock [4 , Y]
+R-lock [4 , Z]
+unlock [4 , W]
+unlock [4 , X]
+unlock [4 , Y]
+unlock [4 , Z]
+Commit transaction 4
+R-lock [5 , V]
+R-lock [5 , Z]
+unlock [5 , V]
+unlock [5 , Z]
+Commit transaction 5
+R-lock [6 , V]
+unlock [6 , V]
+Commit transaction 6
+Final Values : V=100 W=100 X=100 Y=100 Z=100

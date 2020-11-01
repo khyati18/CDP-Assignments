@@ -10,6 +10,10 @@
 
 ## Assignment 4 Lock-Manager
 
-`g++ main.cpp`
+`g++ -pthread main.cpp`
 
 `./a.out < "inputFile" > "outputFile"`
+
+`g++ -pthread Deadlock_Detect.cpp`
+
+`./a.out`
