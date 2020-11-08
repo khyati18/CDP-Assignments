@@ -8,11 +8,33 @@
 #include "transaction.hpp"
 #include "struct_lock.hpp"
 #include <semaphore.h>
+#include<unistd.h>
+#include<csignal>
+//#include <boost/thread.h>
 using namespace std;
 
 // locks[0]:v, locks[1]:w, locks[2]:x, locks[3]:y, locks[4]:z 
 vector <struct_lock> locks(5);
+vector<bool> wait_state;
+int total_transactions;
 
+
+void detect_deadlock(int signal_num)
+{
+	cout<<endl;
+	cout<<"Dead lock detected between transactions ";
+	for(int i=0;i<total_transactions;i++)
+	{
+		if(wait_state[i]==1)
+		{
+			cout<<i+1<<" ";
+		}
+	}
+	cout<<endl;
+
+	//sleep(2);
+	exit(signal_num);
+}
 typedef struct state_variable
 {
 	int v;
@@ -23,7 +45,7 @@ typedef struct state_variable
 }
 state_var;
 
-int total_transactions;
+
 state_var data;
 vector <transaction> trans;
 
@@ -44,20 +66,33 @@ void release_lock(int transId, int varName)
 
 void acquire_Read_lock(int transId, int varName) 
 {
+	sem_wait(&mutex_global);
 	int wait_flag = sem_trywait(&locks[varName].lock);
+	if(wait_flag==0)
+	{
+		trans[transId-1].ac_lock[varName]=true;
+		cout << "R-lock [" << transId << " , " << char('V' +varName) << "]"<<endl;	
+		wait_state[transId-1]=false;
+		locks[varName].state = 0;
+	}
+	//sem_post(&mutex_global);
 	if(wait_flag!=0)
 	{
-		sem_wait(&mutex_global);
-		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		//sem_wait(&mutex_global);
+		cout << "Wait [" << transId << " , " << char('V' +varName) << "]"<<endl;
+		wait_state[transId-1]=true;
 		sem_post(&mutex_global);
 		sem_wait(&locks[varName].lock);
-	}
+		sem_wait(&mutex_global);
+	 	trans[transId-1].ac_lock[varName]=true;
+		cout << "R-lock [" << transId << " , " << char('V' +varName) << "]"<<endl;	
+		wait_state[transId-1]=false;
+		locks[varName].state = 0;
 		
-	sem_wait(&mutex_global);
-	trans[transId-1].ac_lock[varName]=true;
-	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
-	locks[varName].state = 0;
+	}
 	sem_post(&mutex_global);
+		
+	
 }
 
 void acquire_Write_lock(int transId, int varName) 
@@ -66,14 +101,16 @@ void acquire_Write_lock(int transId, int varName)
 	if(wait_flag!=0)
 	{
 		sem_wait(&mutex_global);
-		cout << "Wait [" << transId << " , " << char('V' +varName) << "]\n";
+		cout << "Wait [" << transId << " , " << char('V' +varName) << "]"<<endl;
+		wait_state[transId-1]=true;
 		sem_post(&mutex_global);
 		sem_wait(&locks[varName].lock);
 	}
 		
 	sem_wait(&mutex_global);
 	trans[transId-1].ac_lock[varName]=true;
-	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]\n";	
+	cout << "R-lock [" << transId << " , " << char('V' +varName) << "]"<<endl;	
+	wait_state[transId-1]=false;
 	locks[varName].state = 0;
 	sem_post(&mutex_global);
 }
@@ -83,7 +120,7 @@ void upgrade_to_Write(int transId, int varName)
 	sem_wait(&mutex_global);
 	if(!locks[varName].state)
 	{
-    	cout << "upgrade [" << transId << " , " << char('V' +varName) << "]\n";
+    	cout << "upgrade [" << transId << " , " << char('V' +varName) << "]"<<endl;
 	}
     locks[varName].state = 1;
 	sem_post(&mutex_global);
@@ -102,11 +139,11 @@ void release_all(int transId,int f)
 	}
 	if(f)
 	{
-		cout << "Commit transaction " << transId << "\n";
+		cout << "Commit transaction " << transId << endl;
 	}
 	else 
 	{
-		cout << "Abort transaction " << transId << "\n";
+		cout << "Abort transaction " << transId << endl;
 	}
 	sem_post(&mutex_global);
 }
@@ -114,7 +151,7 @@ void release_all(int transId,int f)
 void evaluate(string op)
 {
 	sem_wait(&mutex_global);
-	cout << "Doing operation " << op << "\n";
+	cout << "Doing operation " << op << endl;
 
 	if(op.length()==5)													// X=X+Y
 	{
@@ -153,7 +190,7 @@ void takeinput()
 	state_vars['Z'] = &data.z;
 	
 	trans.resize(total_transactions);
-	
+	wait_state.resize(total_transactions,false);
 	for(int i=0;i<total_transactions;i++)
 	{
 		cin >> trans[i].id;
@@ -232,9 +269,10 @@ void execute_Transaction(transaction T)
 
 int main()
 {
+	signal(SIGINT,detect_deadlock);
 	sem_init(&mutex_global,0,1);
 	takeinput();
-
+	
 	/* For running transactions in diff. threads */
 	
 	vector< thread > threads(total_transactions);
@@ -246,6 +284,7 @@ int main()
   	{
     	th.join();
   	}
+	 // th1.join();
 
   	cout << "Final Values : V=" << data.v << " W=" << data.w << " X=" << data.x << " Y=" << data.y << " Z=" << data.z << endl; 
 

@@ -1,0 +1,13 @@
+Intial Values : V=100 W=100 X=100 Y=100 Z=100
+R-lock [1 , X]
+Doing operation X=X+100
+Doing operation X=X+100
+R-lock [3 , Z]
+R-lock [2 , Y]
+Wait [2 , X]
+Wait [3 , Y]
+Doing operation X=X+100
+upgrade [1 , X]
+Wait [1 , Y]
+
+Dead lock detected between transactions 1 2 3 
